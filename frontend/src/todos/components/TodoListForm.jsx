@@ -8,6 +8,7 @@ import {
   Typography,
   Checkbox,
 } from '@mui/material'
+import CheckIcon from '@mui/icons-material/Check'
 import DeleteIcon from '@mui/icons-material/Delete'
 import AddIcon from '@mui/icons-material/Add'
 import { debounce } from '../../utils/common-functions.util'
@@ -17,6 +18,7 @@ const debouncedUpdateTodoRequest = debounce(TodoRequests.updateTodo, 500)
 
 export const TodoListForm = ({ todoList }) => {
   const [todos, setTodos] = useState([])
+  const [allCompleted, setAllCompleted] = useState(false)
 
   useEffect(() => {
     const getTodos = async () => {
@@ -29,6 +31,10 @@ export const TodoListForm = ({ todoList }) => {
 
     getTodos()
   }, [todoList._id])
+
+  useEffect(() => {
+    setAllCompleted(todos.every((todo) => todo.completed))
+  }, [todos])
 
   const addTodo = async () => {
     const newTodo = await TodoRequests.addTodo(todoList._id)
@@ -73,7 +79,13 @@ export const TodoListForm = ({ todoList }) => {
   return (
     <Card sx={{ margin: '0 1rem' }}>
       <CardContent>
-        <Typography component='h2'>{todoList.title}</Typography>
+        <Typography
+          component='h2'
+          sx={{ display: 'flex', textDecoration: allCompleted ? 'line-through' : 'none' }}
+        >
+          {todoList.title}
+          {allCompleted && <CheckIcon sx={{ marginLeft: '16px' }} />}
+        </Typography>
         <form style={{ display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
           {todos.map((todo, index) => (
             <div key={index} style={{ display: 'flex', alignItems: 'center' }}>

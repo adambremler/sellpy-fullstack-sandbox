@@ -1,5 +1,13 @@
 import React, { useState, useEffect } from 'react'
-import { TextField, Card, CardContent, CardActions, Button, Typography } from '@mui/material'
+import {
+  TextField,
+  Card,
+  CardContent,
+  CardActions,
+  Button,
+  Typography,
+  Checkbox,
+} from '@mui/material'
 import DeleteIcon from '@mui/icons-material/Delete'
 import AddIcon from '@mui/icons-material/Add'
 import { debounce } from '../../utils/common-functions.util'
@@ -42,9 +50,11 @@ export const TodoListForm = ({ todoList }) => {
     }
   }
 
-  const updateTodo = async (index, updates) => {
+  const updateTodo = async (index, updates, shouldDebounce = false) => {
     const updatedTodo = { ...todos[index] }
-    if (updates.title !== undefined) updatedTodo.title = updates.title
+    for (const [key, value] of Object.entries(updates)) {
+      updatedTodo[key] = value
+    }
 
     setTodos([
       // immutable update
@@ -53,7 +63,11 @@ export const TodoListForm = ({ todoList }) => {
       ...todos.slice(index + 1),
     ])
 
-    await debouncedUpdateTodoRequest(todoList._id, updatedTodo)
+    if (shouldDebounce) {
+      await debouncedUpdateTodoRequest(todoList._id, updatedTodo._id, updates)
+    } else {
+      return TodoRequests.updateTodo(todoList._id, updatedTodo._id, updates)
+    }
   }
 
   return (
@@ -66,18 +80,22 @@ export const TodoListForm = ({ todoList }) => {
               <Typography sx={{ margin: '8px' }} variant='h6'>
                 {index + 1}
               </Typography>
+              <Checkbox
+                sx={{ margin: '8px' }}
+                checked={todo.completed}
+                onChange={(event) => updateTodo(index, { completed: event.target.checked })}
+              />
               <TextField
-                sx={{ flexGrow: 1, marginTop: '1rem' }}
+                sx={{
+                  flexGrow: 1,
+                  marginTop: '1rem',
+                  textDecoration: todo.completed ? 'line-through' : 'none',
+                }}
                 label='What to do?'
                 value={todo.title}
-                onChange={(event) => updateTodo(index, { title: event.target.value })}
+                onChange={(event) => updateTodo(index, { title: event.target.value }, true)}
               />
-              <Button
-                sx={{ margin: '8px' }}
-                size='small'
-                color='secondary'
-                onClick={() => deleteTodo(index)}
-              >
+              <Button size='small' color='secondary' onClick={() => deleteTodo(index)}>
                 <DeleteIcon />
               </Button>
             </div>

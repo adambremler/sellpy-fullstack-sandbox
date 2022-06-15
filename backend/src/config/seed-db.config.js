@@ -1,28 +1,35 @@
-const { TodoListModel } = require('../models')
+const { TodoListModel, TodoModel } = require('../models')
 
 const seedDBIfEmpty = async () => {
-  const todoLists = await TodoListModel.find()
-  if (todoLists.length === 0) {
-    await TodoListModel.insertMany([
-      {
-        title: 'First List',
-        todos: [
-          {
-            title: 'First todo of first list!',
-          },
-        ],
-      },
-      {
-        title: 'Second List',
-        todos: [
-          {
-            title: 'First todo of second list!',
-          },
-        ],
-      },
-    ])
+  try {
+    const todoLists = await TodoListModel.find()
+    if (todoLists.length === 0) {
+      const todoLists = await TodoListModel.insertMany([
+        {
+          title: 'First List',
+          todos: [],
+        },
+        {
+          title: 'Second List',
+          todos: [],
+        },
+      ])
 
-    console.log('Seeded DB with 2 todo lists.')
+      await TodoModel.insertMany([
+        {
+          todoList: todoLists[0]._id,
+          title: 'First todo of first list!',
+        },
+        {
+          todoList: todoLists[1]._id,
+          title: 'First todo of second list!',
+        },
+      ])
+
+      console.log('Seeded DB with 2 todo lists.')
+    }
+  } catch (error) {
+    console.log(`An error occured while seeding the DB: ${error}`)
   }
 }
 

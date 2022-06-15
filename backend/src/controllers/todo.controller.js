@@ -1,10 +1,10 @@
-const { TodoListModel } = require('../models')
+const { TodoModel } = require('../models')
 const { internalServerError } = require('../utils/responses.utils')
 
 class TodoController {
   static async getTodos(req, res) {
     try {
-      const todos = (await TodoListModel.findOne({ _id: req.params.todoListID })).todos
+      const todos = await TodoModel.find({ todoList: req.params.todoListID })
 
       res.status(200).json(todos)
     } catch (error) {
@@ -14,21 +14,10 @@ class TodoController {
 
   static async createTodo(req, res) {
     try {
-      const todo = (
-        await TodoListModel.findOneAndUpdate(
-          { _id: req.params.todoListID },
-          {
-            $push: {
-              todos: {
-                title: req.body.title,
-              },
-            },
-          },
-          {
-            new: true,
-          }
-        ).select({ todos: { $slice: -1 } })
-      ).todos[0]
+      const todo = await TodoModel.create({
+        todoList: req.params.todoListID,
+        title: req.body.title,
+      })
 
       res.status(201).json(todo)
     } catch (error) {
@@ -38,10 +27,7 @@ class TodoController {
 
   static async updateTodo(req, res) {
     try {
-      await TodoListModel.findOneAndUpdate(
-        { _id: req.params.todoListID, 'todos._id': req.params.todoID },
-        { $set: { 'todos.$.title': req.body.title } }
-      )
+      await TodoModel.findOneAndUpdate({ _id: req.params.todoID }, { title: req.body.title })
 
       res.status(204).send()
     } catch (error) {
@@ -51,10 +37,7 @@ class TodoController {
 
   static async deleteTodo(req, res) {
     try {
-      await TodoListModel.findOneAndUpdate(
-        { _id: req.params.todoListID },
-        { $pull: { todos: { _id: req.params.todoID } } }
-      )
+      await TodoModel.findOneAndDelete({ _id: req.params.todoID })
 
       res.status(204).send()
     } catch (error) {

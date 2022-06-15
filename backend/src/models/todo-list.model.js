@@ -5,16 +5,8 @@ const TodoListSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  todos: [
-    {
-      title: {
-        type: String,
-        required: true,
-      },
-    },
-  ],
 })
 
-const TodoListModel = mongoose.model('todoLists', TodoListSchema)
+const TodoListModel = mongoose.model('TodoList', TodoListSchema)
 
 module.exports = TodoListModel

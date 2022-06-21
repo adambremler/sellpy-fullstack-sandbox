@@ -4,14 +4,14 @@ import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker'
 import DeleteIcon from '@mui/icons-material/Delete'
 import ago from 's-ago'
 
-export const Todo = ({ todo, todoIndex, updateTodo, deleteTodo }) => {
+export const Todo = ({ todo, number, updateTodo, deleteTodo, flushUpdateTodoDebounce }) => {
   const date = new Date(todo.deadline)
   const timeAgoString = (date.getTime() && ago(date)) || null
 
   return (
     <div style={{ display: 'flex', alignItems: 'center', marginTop: '1rem' }}>
       <Typography sx={{ margin: '8px' }} variant='h6'>
-        {todoIndex + 1}
+        {number}
       </Typography>
       <Checkbox
         sx={{ margin: '8px' }}
@@ -27,6 +27,7 @@ export const Todo = ({ todo, todoIndex, updateTodo, deleteTodo }) => {
         label='What to do?'
         value={todo.title}
         onChange={(event) => updateTodo({ title: event.target.value }, true)}
+        onFocus={flushUpdateTodoDebounce}
       />
       <DateTimePicker
         label='Deadline'

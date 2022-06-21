@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { Card, CardContent, CardActions, Button, Typography } from '@mui/material'
 import CheckIcon from '@mui/icons-material/Check'
 import AddIcon from '@mui/icons-material/Add'
@@ -6,11 +6,10 @@ import { debounce } from '../../utils/common-functions.util'
 import TodoRequests from '../../requests/todo.requests'
 import { Todo } from './Todo'
 
-const debouncedUpdateTodoRequest = debounce(TodoRequests.updateTodo, 500)
+const [debouncedUpdateTodoRequest, flushUpdateTodoDebounce] = debounce(TodoRequests.updateTodo, 500)
 
 export const TodoListForm = ({ todoList }) => {
   const [todos, setTodos] = useState([])
-  const [allCompleted, setAllCompleted] = useState(false)
 
   useEffect(() => {
     const getTodos = async () => {
@@ -24,9 +23,10 @@ export const TodoListForm = ({ todoList }) => {
     getTodos()
   }, [todoList._id])
 
-  useEffect(() => {
-    setAllCompleted((todos.every((todo) => todo.completed) && todos.length) || false)
-  }, [todos])
+  const allCompleted = useMemo(
+    () => (todos.every((todo) => todo.completed) && todos.length) || false,
+    [todos]
+  )
 
   const addTodo = async () => {
     const newTodo = await TodoRequests.addTodo(todoList._id)
@@ -36,7 +36,7 @@ export const TodoListForm = ({ todoList }) => {
     }
   }
 
-  const deleteTodo = async (index) => {
+  const deleteTodo = (index) => async () => {
     const success = await TodoRequests.deleteTodo(todoList._id, todos[index]._id)
 
     if (success) {
@@ -48,25 +48,24 @@ export const TodoListForm = ({ todoList }) => {
     }
   }
 
-  const updateTodo = async (index, updates, shouldDebounce = false) => {
-    const updatedTodo = { ...todos[index] }
-    for (const [key, value] of Object.entries(updates)) {
-      updatedTodo[key] = value
-    }
+  const updateTodo =
+    (index) =>
+    async (updates, shouldDebounce = false) => {
+      const updatedTodo = { ...todos[index], ...updates }
 
-    setTodos([
-      // immutable update
-      ...todos.slice(0, index),
-      updatedTodo,
-      ...todos.slice(index + 1),
-    ])
+      setTodos([
+        // immutable update
+        ...todos.slice(0, index),
+        updatedTodo,
+        ...todos.slice(index + 1),
+      ])
 
-    if (shouldDebounce) {
-      await debouncedUpdateTodoRequest(todoList._id, updatedTodo._id, updates)
-    } else {
-      return TodoRequests.updateTodo(todoList._id, updatedTodo._id, updates)
+      if (shouldDebounce) {
+        await debouncedUpdateTodoRequest(todoList._id, updatedTodo._id, updates)
+      } else {
+        return TodoRequests.updateTodo(todoList._id, updatedTodo._id, updates)
+      }
     }
-  }
 
   return (
     <Card sx={{ margin: '0 1rem' }}>
@@ -83,9 +82,10 @@ export const TodoListForm = ({ todoList }) => {
             <Todo
               key={index}
               todo={todo}
-              todoIndex={index}
-              updateTodo={(...args) => updateTodo(index, ...args)}
-              deleteTodo={() => deleteTodo(index)}
+              number={index + 1}
+              updateTodo={updateTodo(index)}
+              deleteTodo={deleteTodo(index)}
+              flushUpdateTodoDebounce={flushUpdateTodoDebounce}
             />
           ))}
           <CardActions>
